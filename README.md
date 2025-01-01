@@ -134,19 +134,6 @@ Use the `--help` flag with any command to see its options. For example:
 
 ---
 
-## Contributing
-
-Contributions are welcome! Please follow these steps:
-
-1. Fork the repository.
-2. Create a feature branch:
-   ```bash
-   git checkout -b feature/your-feature
-   ```
-3. Open a pull request.
-
----
-
 ## License
 
 This project is licensed under the Apache 2.0 License. See the [LICENSE](LICENSE) file for details.
