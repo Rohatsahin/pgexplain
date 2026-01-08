@@ -5,11 +5,19 @@
 *.so
 *.dylib
 
+# Project binary
+pgexplain
+
 # Test binary, build with `go test -c`
 *.test
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+
+# Generated plan files
+Plan_Created_on_*.html
+Plan_Created_on_*.json
+Comparison_*.json
 
 .idea
 .DS_Store
