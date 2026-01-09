@@ -18,6 +18,7 @@ PG Explain is a powerful command-line tool for analyzing and visualizing Postgre
 - **Query Comparison**: Compare two queries side-by-side to identify the most efficient approach
 - **Multiple Output Formats**: Generate execution plans as interactive HTML or structured JSON
 - **Cost Threshold Alerts**: Automatically detect and warn about expensive queries
+- **Index Recommendations**: Get intelligent index suggestions based on query execution patterns
 - **Remote Sharing**: Upload plans to Dalibo's pev2 service for easy sharing
 - **Interactive Visualizations**: Beautiful HTML reports powered by [pev2](https://github.com/dalibo/pev2)
 - **Cost Analysis**: Identify expensive operations and get optimization recommendations
@@ -44,6 +45,9 @@ pg_explain compare "SELECT * FROM orders WHERE user_id = 123" "SELECT * FROM ord
 
 # Analyze with cost threshold warning
 pg_explain analyze -t 1000 "SELECT * FROM large_table"
+
+# Get index recommendations for query optimization
+pg_explain analyze -i "SELECT * FROM users WHERE age > 25"
 
 # Generate JSON output with cost analysis
 pg_explain analyze -f json -t 500 "SELECT * FROM orders JOIN users ON orders.user_id = users.id"
@@ -246,6 +250,8 @@ pg_explain analyze [flags] "SQL_QUERY"
 | `--format` | `-f` | string | `html` | Output format: `html` or `json` |
 | `--remote` | `-r` | bool | `false` | Upload plan to remote server for sharing |
 | `--threshold` | `-t` | float | `0` | Cost threshold for alerting (0 = disabled) |
+| `--recommend-indexes` | `-i` | bool | `false` | Recommend indexes based on query execution plan |
+| `--index-threshold` | | float | `100` | Minimum operation cost to trigger index recommendations |
 
 ---
 
@@ -443,7 +449,78 @@ pg_explain analyze --remote "SELECT * FROM products WHERE category = 'electronic
 
 ---
 
-#### 6. Query Comparison
+#### 6. Index Recommendations
+
+Get intelligent index suggestions to optimize query performance:
+
+```bash
+pg_explain analyze --recommend-indexes "SELECT * FROM users WHERE age > 25 AND status = 'active'"
+```
+
+**Output:**
+```
+🔍 Analyzing your query...
+📊 Output format: html
+
+✅ Query analysis complete!
+
+======================================================================
+🎯 INDEX RECOMMENDATIONS
+======================================================================
+Found: 2 recommendations (1 high priority)
+Threshold: Operations with cost >= 100.0
+----------------------------------------------------------------------
+
+🟠 Priority 4 (High - Significant Impact)
+
+1. Table: users
+   Columns: age
+   Reason: Sequential scan with filter on 'age'
+   Operation: Seq Scan (Cost: 5230.75)
+
+   CREATE INDEX idx_users_age ON users USING BTREE (age);
+
+----------------------------------------------------------------------
+
+🟡 Priority 3 (Medium - Moderate Impact)
+
+1. Table: users
+   Columns: status
+   Reason: Sequential scan with filter on 'status'
+   Operation: Seq Scan (Cost: 1250.30)
+
+   CREATE INDEX idx_users_status ON users USING BTREE (status);
+
+======================================================================
+💡 Tips:
+   • Test indexes on a development database first
+   • Monitor index usage with pg_stat_user_indexes
+   • Consider impact on INSERT/UPDATE performance
+   • Combine multiple single-column indexes into composite indexes where appropriate
+======================================================================
+
+💾 Generating interactive HTML report...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📁 Plan saved successfully!
+   /path/to/Plan_Created_on_January_9th_2026_01:30:00.html
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+**With Custom Threshold:**
+```bash
+pg_explain analyze -i --index-threshold 500 "SELECT * FROM orders JOIN users ON orders.user_id = users.id"
+```
+
+This will only recommend indexes for operations with cost >= 500.
+
+**Combined with Cost Analysis:**
+```bash
+pg_explain analyze -t 1000 -i "SELECT * FROM large_table WHERE created_at > '2024-01-01'"
+```
+
+---
+
+#### 7. Query Comparison
 
 Compare two different query approaches to find the most efficient one:
 
@@ -508,7 +585,7 @@ Seq Scan on orders  (cost=0.00..425.50 rows=1000 width=100)
 
 ---
 
-#### 7. Query Comparison with JSON Output
+#### 8. Query Comparison with JSON Output
 
 Get detailed comparison data in JSON format:
 
@@ -613,6 +690,19 @@ fi
 
 ---
 
+### Tips for Using Index Recommendations
+
+- **Test First**: Always test recommended indexes on a development database before applying to production
+- **Monitor Usage**: Use `pg_stat_user_indexes` to verify indexes are being used after creation
+- **Consider Trade-offs**: Indexes improve read performance but can slow down INSERT/UPDATE operations
+- **Composite Indexes**: Consider combining multiple single-column index recommendations into composite indexes
+- **Adjust Threshold**: Use `--index-threshold` to focus on high-impact optimizations (e.g., `--index-threshold 500`)
+- **Combine with Cost Analysis**: Run with both `-t` and `-i` flags to get comprehensive optimization insights
+- **Priority Levels**: Focus on Priority 4-5 (High/Critical) recommendations first for maximum impact
+- **Review Existing Indexes**: Check `pg_indexes` view to avoid creating duplicate indexes
+
+---
+
 ## Troubleshooting
 
 ### Common Issues
@@ -664,16 +754,15 @@ Completed features:
 - [x] JSON output format
 - [x] Cost threshold alerts
 - [x] Configuration file support (`.pgexplainrc`)
+- [x] Index recommendations
 
 Potential future features:
 
 - [ ] Batch analysis from SQL files
 - [ ] Historical plan tracking with SQLite
-- [ ] Support for other databases (MySQL, MariaDB)
 - [ ] Visual plan diff for comparisons
 - [ ] Additional output formats (Markdown, CSV)
 - [ ] Query optimization suggestions based on patterns
-- [ ] Index recommendations
 
 ---
 

@@ -87,6 +87,18 @@ func runExplain(cmd *cobra.Command, args []string) {
 		}
 	}
 
+	// Index recommendations
+	recommendIndexes, _ := cmd.Flags().GetBool("recommend-indexes")
+	if recommendIndexes {
+		indexThreshold, _ := cmd.Flags().GetFloat64("index-threshold")
+		indexInfo := analyzeIndexOpportunities(plan, indexThreshold)
+		if indexInfo.TotalFound > 0 {
+			displayIndexRecommendations(indexInfo)
+		} else {
+			fmt.Printf("✨ No index recommendations (all operations below threshold of %.0f)\n\n", indexThreshold)
+		}
+	}
+
 	if remoteFlag {
 		fmt.Println("☁️  Uploading to remote server...")
 		remoteURL := uploadPlan(plan, query, title)
@@ -182,5 +194,7 @@ func init() {
 	analyzeCmd.Flags().BoolP("remote", "r", false, "Send the execution plan to a remote server to share with your individuals")
 	analyzeCmd.Flags().StringP("format", "f", "html", "Output format for local files (html or json)")
 	analyzeCmd.Flags().Float64P("threshold", "t", 0, "Cost threshold for alerting on expensive queries (0 = disabled)")
+	analyzeCmd.Flags().BoolP("recommend-indexes", "i", false, "Recommend indexes based on query execution plan")
+	analyzeCmd.Flags().Float64("index-threshold", 100.0, "Minimum operation cost to trigger index recommendations")
 	rootCmd.AddCommand(analyzeCmd)
 }
