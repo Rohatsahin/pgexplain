@@ -36,6 +36,7 @@ type Config struct {
 		Host     string `yaml:"host"`
 		User     string `yaml:"user"`
 		Database string `yaml:"database"`
+		Password string `yaml:"password"`
 	} `yaml:"database"`
 }
 
@@ -104,18 +105,27 @@ func runConfigInit(cmd *cobra.Command, args []string) {
 
 # Default settings for analyze command
 defaults:
-  format: html      # Output format: html or json
+  format: html      # Output format: html, json, markdown, or csv
   threshold: 0      # Cost threshold for alerts (0 = disabled)
   remote: false     # Upload to remote server by default
 
 # Database connection settings
-# These override environment variables (PGHOST, PGUSER, PGDATABASE)
+# These override environment variables (PGHOST, PGUSER, PGDATABASE, PGPASSWORD)
 database:
   host: ` + defaultConfig.Database.Host + `
   user: ` + defaultConfig.Database.User + `
   database: ` + defaultConfig.Database.Database + `
+  password: ""      # Leave empty to use PGPASSWORD env var or .pgpass file
 
-# Note: Use .pgpass file for password management
+# Password Authentication (in order of priority):
+# 1. PGPASSWORD environment variable (recommended for development)
+# 2. password field above (not recommended - stored in plain text)
+# 3. .pgpass file (recommended for production)
+#
+# To use .pgpass file (most secure):
+#   echo "localhost:5432:mydb:myuser:mypassword" > ~/.pgpass
+#   chmod 600 ~/.pgpass
+#
 # For more info: https://www.postgresql.org/docs/current/libpq-pgpass.html
 `
 
