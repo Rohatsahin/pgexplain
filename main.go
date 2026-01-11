@@ -15,7 +15,7 @@ limitations under the License.
 */
 package main
 
-import "pgexplain/cmd"
+import "github.com/Rohatsahin/pgexplain/cmd"
 
 func main() {
 	cmd.Execute()
